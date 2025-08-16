@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/hulutech-web/goravel_pdf_gen/blob/master/images/logo.png?raw=true" width="300"  />
+</p>
+
 # goravel_pdf_gen
 #### A simple package to generate PDFs in Go using the goravel framework
 #### 配置内容
