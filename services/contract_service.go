@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
-	"goravel/app/models"
+	"github.com/hulutech-web/goravel_pdf_gen/models"
 	"os"
 	"path/filepath"
 )

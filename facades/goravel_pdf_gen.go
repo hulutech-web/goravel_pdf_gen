@@ -3,8 +3,8 @@ package facades
 import (
 	"log"
 
-	"goravel/packages/goravel_pdf_gen"
-	"goravel/packages/goravel_pdf_gen/contracts"
+	"github.com/hulutech-web/goravel_pdf_gen"
+	"github.com/hulutech-web/goravel_pdf_gen/contracts"
 )
 
 func GoravelPdfGen() contracts.GoravelPdfGen {

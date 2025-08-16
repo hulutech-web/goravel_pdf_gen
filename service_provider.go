@@ -3,7 +3,7 @@ package goravel_pdf_gen
 import (
 	"github.com/goravel/framework/contracts/binding"
 	"github.com/goravel/framework/contracts/foundation"
-	"goravel/packages/goravel_pdf_gen/routes"
+	"github.com/hulutech-web/goravel_pdf_gen/routes"
 )
 
 const Binding = "goravel_pdf_gen"

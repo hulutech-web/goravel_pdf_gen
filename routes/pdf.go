@@ -6,7 +6,7 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	"github.com/goravel/framework/contracts/route"
 	"github.com/goravel/framework/facades"
-	"goravel/packages/goravel_pdf_gen/controllers"
+	"github.com/hulutech-web/goravel_pdf_gen/controllers"
 	"html/template"
 	"io"
 	"os"

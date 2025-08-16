@@ -3,7 +3,7 @@ package seeders
 import (
 	goravelfacades "github.com/goravel/framework/facades"
 	json2 "github.com/goravel/framework/support/json"
-	"goravel/packages/goravel_pdf_gen/models"
+	"github.com/hulutech-web/goravel_pdf_gen/models"
 )
 
 type TplSeeder struct {

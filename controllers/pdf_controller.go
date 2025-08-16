@@ -5,7 +5,7 @@ import (
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
 	"github.com/goravel/framework/contracts/http"
 	goravelfacades "github.com/goravel/framework/facades"
-	"goravel/packages/goravel_pdf_gen/models"
+	"github.com/hulutech-web/goravel_pdf_gen/models"
 )
 
 type PDFController struct {
