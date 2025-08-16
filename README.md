@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/hulutech-web/goravel_pdf_gen/blob/master/images/logo.png?raw=true" width="600"  />
+  <img src="https://github.com/hulutech-web/goravel_pdf_gen/blob/master/images/logo.png?raw=true" width="900"  />
 </p>
 
 # goravel_pdf_gen
