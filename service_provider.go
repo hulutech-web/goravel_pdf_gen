@@ -34,7 +34,7 @@ func (r *ServiceProvider) Register(app foundation.Application) {
 // Boot boots the service provider, will be called after all service providers are registered.
 func (r *ServiceProvider) Boot(app foundation.Application) {
 	routes.Pdf(app)
-	app.Publishes("./packages/goravel_pdf_gen", map[string]string{
+	app.Publishes("github.com/hulutech-web/goravel_pdf_gen", map[string]string{
 		"setup/config/goravel_pdf_gen.go":                   app.ConfigPath("goravel_pdf_gen.go"),
 		"databases/20250816105218_create_pdf_gens_table.go": app.DatabasePath("20250816105218_create_pdf_gens_table.go"),
 		"assets/all.min.css":                                app.PublicPath("assets/all.min.css"),
