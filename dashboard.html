@@ -6,6 +6,7 @@
     <title>合同PDF动态生成系统</title>
     <script src="assets/vue.global.js"></script>
     <link rel="stylesheet" href="assets/fontawesome-free-7.0.0-web/css/all.min.css">
+    <script src="assets/monaco-editor/vs/loader.js"></script>
     <style>
         * {
             margin: 0;
@@ -96,7 +97,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-width: 0; /* 修复宽度问题 */
+            min-width: 0;
         }
 
         .schema-editor {
@@ -149,7 +150,7 @@
             display: flex;
             gap: 15px;
             margin-top: 20px;
-            flex-wrap: wrap;
+            flex-wrap: no-wrap;
         }
 
         button {
@@ -180,7 +181,7 @@
             padding: 5px 10px;
             border-radius: 5px;
             color: white;
-            height:36px;
+            height: 36px;
             cursor: pointer;
             border: none;
             outline: none;
@@ -318,15 +319,6 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-        }
-
-        .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
         }
 
         .editor-header {
@@ -485,6 +477,48 @@
             margin-top: 5px;
         }
 
+        /* Monaco Editor 容器样式 */
+        .editor-container {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #fff;
+        }
+
+        .output-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        .output-section textarea {
+            width: 100%;
+            min-height: 100px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 1200px) {
             .app-container {
                 flex-direction: column;
@@ -534,18 +568,19 @@
         </header>
 
         <div class="tabs">
-            <div class="tab" @click="currentTab = 'design'" :class="{active: currentTab === 'design'}">
+            <div class="tab" @click="switchTab('design')" :class="{active: currentTab === 'design'}">
                 <i class="fas fa-drafting-compass"></i> 表单设计
             </div>
-            <div class="tab" @click="currentTab = 'template'" :class="{active: currentTab === 'template'}">
+            <div class="tab" @click="switchTab('template')" :class="{active: currentTab === 'template'}">
                 <i class="fas fa-file-alt"></i> 模板编辑
             </div>
-            <div class="tab" @click="currentTab = 'generate'" :class="{active: currentTab === 'generate'}">
+            <div class="tab" @click="switchTab('generate')" :class="{active: currentTab === 'generate'}">
                 <i class="fas fa-file-pdf"></i> 生成PDF
             </div>
         </div>
 
-        <div class="tab-content active" v-if="currentTab === 'design'">
+        <!-- 表单设计标签页 -->
+        <div class="tab-content active" v-show="currentTab === 'design'">
             <div class="app-container">
                 <div class="panel schema-editor">
                     <div class="panel-title">
@@ -571,12 +606,9 @@
                         <button @click="resetForm" class="danger">
                             <i class="fas fa-trash"></i> 重置
                         </button>
-
-
                         <button @click="submitProForm" class="success">
-                            <i class="fas fa-trash"></i> 保存
+                            <i class="fas fa-save"></i> 保存
                         </button>
-
                     </div>
 
                     <div :class="['status', status.type]">
@@ -608,7 +640,8 @@
                                 <template v-if="field.type === 'string'">
                                     <!-- 文本域 -->
                                     <div v-if="field.format === 'textarea'">
-                                        <label :for="field.key">{{ field.title }}<span v-if="field.required"> *</span></label>
+                                        <label :for="field.key">{{ field.title }}<span
+                                                v-if="field.required"> *</span></label>
                                         <textarea
                                                 v-model="formData[field.key]"
                                                 :placeholder="field.placeholder"
@@ -636,7 +669,8 @@
 
                                     <!-- 下拉选择 -->
                                     <div v-else-if="field.enum">
-                                        <label :for="field.key">{{ field.title }}<span v-if="field.required"> *</span></label>
+                                        <label :for="field.key">{{ field.title }}<span
+                                                v-if="field.required"> *</span></label>
                                         <select v-model="formData[field.key]" :required="field.required">
                                             <option v-for="(option, i) in field.enum" :key="i" :value="option">
                                                 {{ option }}
@@ -646,7 +680,8 @@
 
                                     <!-- 普通文本输入 -->
                                     <div v-else>
-                                        <label :for="field.key">{{ field.title }}<span v-if="field.required"> *</span></label>
+                                        <label :for="field.key">{{ field.title }}<span
+                                                v-if="field.required"> *</span></label>
                                         <input
                                                 type="text"
                                                 v-model="formData[field.key]"
@@ -658,7 +693,8 @@
 
                                 <!-- 数字类型字段 -->
                                 <div v-else-if="field.type === 'number'">
-                                    <label :for="field.key">{{ field.title }}<span v-if="field.required"> *</span></label>
+                                    <label :for="field.key">{{ field.title }}<span
+                                            v-if="field.required"> *</span></label>
                                     <input
                                             type="number"
                                             v-model.number="formData[field.key]"
@@ -679,7 +715,8 @@
 
                                 <!-- 日期类型字段 -->
                                 <div v-else-if="field.type === 'date'">
-                                    <label :for="field.key">{{ field.title }}<span v-if="field.required"> *</span></label>
+                                    <label :for="field.key">{{ field.title }}<span
+                                            v-if="field.required"> *</span></label>
                                     <input
                                             type="date"
                                             v-model="formData[field.key]"
@@ -699,23 +736,54 @@
             </div>
         </div>
 
-        <div class="tab-content" :class="{active: currentTab === 'template'}" v-if="currentTab === 'template'">
+        <!-- 模板编辑标签页 -->
+        <div class="tab-content" :class="{active: currentTab === 'template'}" v-show="currentTab === 'template'">
             <div class="app-container">
                 <div class="panel">
                     <div class="panel-title">
                         <i class="fas fa-edit"></i>
                         <h2>合同模板编辑器</h2>
                         <i class="fas fa-warning"></i>
-                        <span>flex布局支持不佳，请谨慎使用</span>
+                        <span>不支持flex布局，谨慎使用</span>
                     </div>
-
+                    <div class="template-syntax">
+                        <h4><i class="fas fa-info-circle"></i> 模板语法说明</h4>
+                        <p>使用双中括号 <code>[[ ]]</code> 作为模板变量标记：</p>
+                        <div class="syntax-example">
+                            &lt;p&gt;合同编号：[[.contractNo]]&lt;/p&gt;<br>
+                            &lt;p&gt;签署日期：[[.signDate]]&lt;/p&gt;
+                        </div>
+                        <p>在后端处理时，这些标记会被转换为Golang的标准模板语法 <code>{{ }}</code></p>
+                    </div>
                     <div class="template-container">
-                        <div class="editor-container">
+                        <div>
                             <div class="editor-header">
                                 <div>合同模板编辑 (使用[[ ]]作为Golang模板语法)</div>
                                 <div>可用变量: {{ availableVariables.join(', ') }}</div>
                             </div>
-                            <textarea id="templateEditor" v-model="contractTemplate"></textarea>
+                            <div class="controls">
+                                <label for="theme" style="width:100px;">主题:</label>
+                                <select id="theme" v-model="theme" style="width:150px;">
+                                    <option value="vs">明亮</option>
+                                    <option value="vs-dark">暗黑</option>
+                                    <option value="hc-black">高对比度</option>
+                                </select>
+
+                                <button @click="formatCode" class="smallBtn">
+                                    <i class="fas fa-align-left"></i> 格式化代码
+                                </button>
+                                <button @click="resetEditor" class="smallBtn">
+                                    <i class="fas fa-redo"></i> 重置内容
+                                </button>
+                                <div class="status" style="min-width:140px;font-size: 12px;color:orangered;">
+                                    状态: {{ editorStatus }}
+                                </div>
+                            </div>
+
+                            <!-- Monaco Editor 容器 -->
+                            <div class="editor-container" id="editorContainer"></div>
+
+
                         </div>
 
                         <div class="template-actions">
@@ -725,28 +793,18 @@
                             <button class="success" @click="saveHTML">
                                 <i class="fas fa-save"></i> 保存模板
                             </button>
-                            <button class="secondary" @click="loadTemplateExample">
+                            <button class="secondary" @click="loadExample">
                                 <i class="fas fa-file-alt"></i> 加载示例
                             </button>
                         </div>
-
-                        <div class="template-syntax">
-                            <h4><i class="fas fa-info-circle"></i> 模板语法说明</h4>
-                            <p>使用双中括号 <code>[[ ]]</code> 作为模板变量标记：</p>
-                            <div class="syntax-example">
-                                &lt;p&gt;合同编号：[[.contractNo]]&lt;/p&gt;<br>
-                                &lt;p&gt;签署日期：[[.signDate]]&lt;/p&gt;
-                            </div>
-                            <p>在后端处理时，这些标记会被转换为Golang的标准模板语法 <code>{{ }}</code></p>
-                        </div>
-                        <span>预览</span>
                         <div class="contract-preview" v-html="compiledTemplate"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="tab-content" :class="{active: currentTab === 'generate'}" v-if="currentTab === 'generate'">
+        <!-- 生成PDF标签页 -->
+        <div class="tab-content" :class="{active: currentTab === 'generate'}" v-show="currentTab === 'generate'">
             <div class="app-container">
                 <div class="panel">
                     <div class="panel-title">
@@ -782,13 +840,67 @@
 </div>
 
 <script>
-    const {createApp, ref, reactive, computed, watch} = Vue;
+    // ========== Monaco Editor 配置 ==========
+    const monacoBaseUrl = 'assets/monaco-editor/vs';
+
+    // 1. 禁用不需要的功能
+    window.MONACOEDITOR_DISABLE_SOURCE_MAP = true;
+
+    // 2. 配置 AMD loader
+    require.config({
+        paths: {
+            'vs': monacoBaseUrl,
+            'vs/base/worker/workerMain': `${monacoBaseUrl}/base/worker/workerMain`
+        },
+        ignoreDuplicateModules: ['vs/editor/editor.main'],
+        // 防止 Monaco 尝试使用 web workers 的 define
+        amd: {
+            define: null
+        }
+    });
+
+    // 3. 配置 Worker 环境
+    window.MonacoEnvironment = {
+        getWorker: function(moduleId, label) {
+            // 创建 worker 的 Blob URL 方案
+            const getWorkerUrl = (workerId, label) => {
+                return URL.createObjectURL(new Blob([
+                    `importScripts('${monacoBaseUrl}/base/worker/workerMain.js');`,
+                    `monaco.languages.${label} && monaco.languages.${label}.getWorker()`
+                ].join('\n'), { type: 'application/javascript' }));
+            };
+
+            const workerMap = {
+                'html': `${monacoBaseUrl}/language/html/htmlWorker.js`,
+                'css': `${monacoBaseUrl}/language/css/cssWorker.js`,
+                'javascript': `${monacoBaseUrl}/language/typescript/ts.worker.js`,
+                'typescript': `${monacoBaseUrl}/language/typescript/ts.worker.js`,
+                'json': `${monacoBaseUrl}/language/json/json.worker.js`,
+                'editor': `${monacoBaseUrl}/editor/editor.main.js`
+            };
+
+            if (label === 'json') {
+                label = 'javascript';
+            }
+
+            const workerUrl = workerMap[label] || workerMap.editor;
+            console.log(`Loading worker for ${label}: ${workerUrl}`);
+
+            // 使用 Blob URL 方案解决路径问题
+            return new Worker(getWorkerUrl(moduleId, label));
+        },
+
+        // 禁用 Trusted Types
+        createTrustedTypesPolicy: () => undefined
+    };
+
+
+
+    const {createApp, ref, reactive, computed, watch, onMounted,nextTick} = Vue;
 
     createApp({
         setup() {
-            // 初始JSON Schema示例
-
-
+            const editorInitialized = ref(false);
             // 响应式数据
             const currentTab = ref('design');
             const schemaJson = ref("");
@@ -803,9 +915,300 @@
             const availableVariables = ref([]);
             const pdfGenerated = ref(false);
 
-            // 设置初始合同模板
+            // Monaco Editor相关
+            const editorContent = ref(contractTemplate.value || `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同模板</title>
+    <style>
+        body {
+            font-family: 'SimSun', serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>合同模板</h1>
+    <p>合同编号：[[.contractNo]]</p>
+    <p>签署日期：[[.signDate]]</p>
+</body>
+</html>`);
+            const theme = ref('vs-dark');
+            const editorStatus = ref('初始化中...');
+            let editor = null;
+            let isSyncing = false;
+            /*编辑器部分*/
+            const initEditor = () => {
+                // 如果已有编辑器实例，先销毁
+                if (editor) {
+                    editor.dispose();
+                    editor = null;
+                }
 
-            // 生成表单方法
+
+                editorInitialized.value = true;
+                // 加载 Monaco 编辑器
+                require(['vs/editor/editor.main'], function () {
+                    try {
+                        // 提前检查容器元素是否存在
+                        const editorContainer = document.getElementById('editorContainer');
+                        if (!editorContainer) {
+                            editorStatus.value = '错误: 找不到编辑器容器元素 (#editorContainer)';
+                            console.error('编辑器初始化失败: 找不到容器元素');
+                            return;
+                        }
+
+                        // 检查是否已经存在编辑器实例
+                        if (editorContainer._editorInstance) {
+                            editorStatus.value = '警告: 编辑器已经初始化';
+                            return;
+                        }
+                        // 直接使用 monaco 对象
+                        editor = monaco.editor.create(editorContainer, {
+                            value: editorContent.value,
+                            language: 'html',
+                            theme: theme.value,
+                            automaticLayout: true,
+                            minimap: {enabled: true},
+                            fontSize: 14,
+                            lineNumbers: 'on',
+                            roundedSelection: true,
+                            scrollBeyondLastLine: false,
+                            readOnly: false,
+                            contextmenu: true,
+                            wordWrap: 'on',
+                            wrappingIndent: 'indent',
+                            suggestOnTriggerCharacters: true,
+                            acceptSuggestionOnEnter: 'on',
+                            tabCompletion: 'on',
+                            wordBasedSuggestions: true
+                        });
+                        // 标记容器元素，防止重复初始化
+                        editorContainer._editorInstance = editor;
+
+                        // 配置HTML语言特性
+                        monaco.languages.html.htmlDefaults.setOptions({
+                            format: {
+                                indentInnerHtml: true,
+                                wrapAttributes: 'force-expand-multiline',
+                                unformatted: '',
+                                contentUnformatted: 'pre,code',
+                                indentHandlebars: true,
+                                endWithNewline: true,
+                                extraLiners: 'head, body, /html',
+                                wrapLineLength: 120
+                            },
+                            suggest: {
+                                html5: true,
+                                angular1: false,
+                                ionic: false
+                            },
+                            validate: {
+                                scripts: true,
+                                styles: true
+                            }
+                        });
+
+                        // 添加自定义模板语法高亮
+                        monaco.languages.register({id: 'contract-template'});
+                        monaco.languages.setMonarchTokensProvider('contract-template', {
+                            defaultToken: '',
+                            tokenPostfix: '.html',
+                            brackets: [
+                                {open: '[[', close: ']]', token: 'delimiter.square'}
+                            ],
+                            tokenizer: {
+                                root: [
+                                    [/\[\[/, {token: 'delimiter.square', next: '@template'}],
+                                    [/\]\]/, {token: 'delimiter.square', next: '@pop'}],
+                                    {include: '@html'}
+                                ],
+                                template: [
+                                    [/[^\]]+/, 'template.variable'],
+                                    [/\]\]/, {token: 'delimiter.square', next: '@pop'}]
+                                ],
+                                html: [
+                                    [/<!DOCTYPE/, 'metatag.html', '@doctype'],
+                                    [/<!--/, 'comment.html', '@comment'],
+                                    [/(<)(\w+)(\/>)/, ['delimiter.html', 'tag.html', 'delimiter.html']],
+                                    [/(<)(\w+)/, ['delimiter.html', {token: 'tag.html', next: '@tag'}]],
+                                    [/(<\/)(\w+)/, ['delimiter.html', {token: 'tag.html', next: '@tag'}]],
+                                    [/[ \t\r\n]+/, 'white'],
+                                    [/[^<]+/, 'content.html']
+                                ],
+                                doctype: [
+                                    [/[^>]+/, 'metatag.content.html'],
+                                    [/>/, 'metatag.html', '@pop']
+                                ],
+                                comment: [
+                                    [/-->/, 'comment.html', '@pop'],
+                                    [/[^-]+/, 'comment.content.html'],
+                                    [/./, 'comment.content.html']
+                                ],
+                                tag: [
+                                    [/[ \t\r\n]+/, 'white'],
+                                    [/(\/?>)/, {token: 'delimiter.html', next: '@pop'}],
+                                    [/(\w+)(\s*=\s*)("[^"]*"|'[^']*')/, ['attribute.name.html', 'delimiter.html', 'attribute.value.html']],
+                                    [/\w+/, 'attribute.name.html'],
+                                    [/=/, 'delimiter.html'],
+                                    [/"([^"]*)"/, 'attribute.value.html'],
+                                    [/'([^']*)'/, 'attribute.value.html']
+                                ]
+                            }
+                        });
+
+                        // 内容变化监听
+                        editor.onDidChangeModelContent(() => {
+                            if (!isSyncing) {
+                                isSyncing = true;
+                                const newValue = editor.getValue();
+                                editorContent.value = newValue;
+                                contractTemplate.value = newValue;
+                                setTimeout(() => {
+                                    isSyncing = false;
+                                    updateTemplatePreview();
+                                }, 100);
+                            }
+                        });
+                        editorInitialized.value = true;
+                        // 保存快捷键
+                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+                            saveHTML();
+                            editorStatus.value = '模板已保存 (' + new Date().toLocaleTimeString() + ')';
+                        });
+
+                        editorStatus.value = '编辑器已就绪';
+                    } catch (error) {
+                        editorStatus.value = `编辑器初始化失败: ${error.message}`;
+                        console.error('编辑器初始化错误:', error);
+                    }
+                });
+            };
+
+            // Tab 切换方法
+            const switchTab = (tabName) => {
+                currentTab.value = tabName;
+
+                // 使用 nextTick 确保 DOM 更新完成
+                nextTick(() => {
+                    // 当切换到模板编辑 Tab 时
+                    if (tabName === 'template') {
+                        if (editor) {
+                            // 重新布局编辑器
+                            editor.layout();
+
+                            // 如果编辑器内容与当前值不同步，更新编辑器内容
+                            if (editor.getValue() !== editorContent.value) {
+                                editor.setValue(editorContent.value);
+                            }
+                        } else {
+                            // 初始化编辑器
+                            initEditor();
+                        }
+                    }
+                });
+            };
+
+            // 在DOM挂载完成后初始化编辑器
+            onMounted(() => {
+                // 添加加载状态提示
+                editorStatus.value = '正在初始化编辑器...';
+
+                // 延迟初始化确保容器完全加载
+                const initInterval = setInterval(() => {
+                    if (document.getElementById('editorContainer')) {
+                        clearInterval(initInterval);
+                        initEditor();
+                    } else {
+                        editorStatus.value = '正在等待编辑器容器准备就绪...';
+                    }
+                }, 100);
+
+                // 设置超时
+                setTimeout(() => {
+                    if (!document.getElementById('editorContainer')) {
+                        clearInterval(initInterval);
+                        editorStatus.value = '错误: 编辑器容器加载超时';
+                        console.error('编辑器容器加载超时');
+                    }
+                }, 5000);
+            });
+
+            // 监听主题变化
+            watch(theme, (newTheme) => {
+                if (editor) {
+                    monaco.editor.setTheme(newTheme);
+                    editorStatus.value = `主题已切换为: ${newTheme}`;
+                }
+            });
+
+            // 监听内容变化，同步到编辑器
+            watch(editorContent, (newContent) => {
+                if (editor && !isSyncing && editor.getValue() !== newContent) {
+                    isSyncing = true;
+                    editor.setValue(newContent);
+                    setTimeout(() => isSyncing = false, 100);
+                }
+            });
+
+            // 格式化代码
+            const formatCode = () => {
+                if (editor) {
+                    editor.getAction('editor.action.formatDocument').run()
+                        .then(() => {
+                            editorStatus.value = '代码已格式化 (' + new Date().toLocaleTimeString() + ')';
+                        })
+                        .catch(err => {
+                            editorStatus.value = `格式化失败: ${err.message}`;
+                            console.error('格式化错误:', err);
+                        });
+                }
+            };
+
+            // 重置编辑器内容
+            const resetEditor = () => {
+                editorContent.value = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同模板</title>
+    <style>
+        body {
+            font-family: 'SimSun', serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>合同模板</h1>
+    <p>合同编号：[[.contractNo]]</p>
+    <p>签署日期：[[.signDate]]</p>
+</body>
+</html>`;
+                editorStatus.value = '内容已重置为默认模板';
+            };
+
+            // 窗口大小变化时调整编辑器
+            window.addEventListener('resize', () => {
+                if (editor) {
+                    setTimeout(() => editor.layout(), 100);
+                }
+            });
+
+            // 其他方法保持不变...
             const generateForm = () => {
                 try {
                     const schema = JSON.parse(schemaJson.value);
@@ -815,7 +1218,6 @@
                         throw new Error('无效的JSON Schema。根类型必须是object且包含properties属性。');
                     }
 
-                    // 提取表单字段
                     formFields.value = Object.entries(schema.properties).map(([key, field]) => {
                         return {
                             key,
@@ -824,8 +1226,7 @@
                         };
                     });
 
-                    // 初始化表单数据
-                    // @yuanhao formData.value = {};
+                    formData.value = {};
                     formFields.value.forEach(field => {
                         if (field.type === 'array') {
                             formData.value[field.key] = [];
@@ -837,7 +1238,6 @@
                         } else {
                             formData.value[field.key] = field.default || '';
 
-                            // 设置默认日期
                             if (field.format === 'date' && !field.default) {
                                 const today = new Date();
                                 formData.value[field.key] = today.toISOString().split('T')[0];
@@ -845,7 +1245,6 @@
                         }
                     });
 
-                    // 计算总金额
                     if (formData.value.quantity && formData.value.unitPrice) {
                         formData.value.totalAmount = formData.value.quantity * formData.value.unitPrice;
                     }
@@ -853,10 +1252,7 @@
                     status.type = 'success';
                     status.message = `表单生成成功！共 ${formFields.value.length} 个字段`;
 
-                    // 更新可用变量
                     availableVariables.value = Object.keys(schema.properties);
-
-                    // 更新模板预览
                     updateTemplatePreview();
                 } catch (error) {
                     status.type = 'error-status';
@@ -864,14 +1260,15 @@
                     formFields.value = [];
                 }
             };
-            const id = ref(null)
-            // 加载后端的模板
+
+            const id = ref(null);
             const loadExample = async () => {
                 await fetch(`${window.pdf_prefix}/${window.getDefaultTemplate}`).then(r => {
                     return r.json()
                 }).then(({data}) => {
                     schemaJson.value = data.params;
                     contractTemplate.value = data.html;
+                    editorContent.value = data.html;
                     id.value = data.id;
                     status.type = 'success';
                     status.message = '示例Schema已加载，点击"生成表单"按钮创建表单';
@@ -879,7 +1276,6 @@
                 })
             };
 
-            // 重置表单
             const resetForm = () => {
                 schemaJson.value = '';
                 formFields.value = [];
@@ -888,38 +1284,34 @@
                 status.message = '表单已重置，请输入新的JSON Schema';
             };
 
-            // 保存表单数据
             const saveFormData = async () => {
                 console.log('表单数据已保存:', formData.value);
                 status.type = 'success';
                 status.message = '表单数据已保存！';
-
             };
 
-            // 更新模板预览
             const updateTemplatePreview = () => {
                 try {
-                    // 使用[[ ]]作为模板语法，避免与Vue冲突
+                    // 确保获取编辑器最新内容
+                    if (editor) {
+                        contractTemplate.value = editor.getValue();
+                    }
                     let result = contractTemplate.value;
-
-                    // 替换所有变量
                     Object.keys(formData.value).forEach(key => {
                         const regex = new RegExp(`\\[\\[\\.${key}\\]\\]`, 'g');
                         const value = formData.value[key] || '';
                         result = result.replace(regex, value);
                     });
-
                     compiledTemplate.value = result;
                 } catch (error) {
                     compiledTemplate.value = `<div class="error">模板渲染错误: ${error.message}</div>`;
                 }
             };
 
-            // 保存模板
             const saveHTML = async () => {
-                console.log('合同模板已保存:', compiledTemplate.value );
+                console.log('合同模板已保存:', compiledTemplate.value);
                 const requestData = {
-                    html: compiledTemplate.value   // 先解析字符串为对象
+                    html: compiledTemplate.value
                 };
                 console.log('Request Body:', requestData);
                 await fetch(`${window.pdf_prefix}/${window.saveHTML}/${id.value}`, {
@@ -929,10 +1321,9 @@
                     },
                     body: JSON.stringify(requestData)
                 })
-                status.message="保存成功";
+                status.message = "保存成功";
             };
 
-            // 加载模板示例
             const loadTemplateExample = () => {
                 contractTemplate.value = templateExample;
                 updateTemplatePreview();
@@ -940,7 +1331,6 @@
                 status.message = '已加载合同模板示例';
             };
 
-            // 生成PDF
             const generatePDF = async () => {
                 try {
                     pdfGenerated.value = true;
@@ -951,24 +1341,19 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
 
-                    // 关键修改：使用 blob() 而不是 json() 处理PDF流
                     const pdfBlob = await response.blob();
                     const pdfUrl = URL.createObjectURL(pdfBlob);
 
-                    // 创建下载链接
                     const downloadLink = document.createElement('a');
                     downloadLink.href = pdfUrl;
-                    // 获取时间戳
                     let timestamp = new Date().getTime();
-                    downloadLink.download = `${timestamp}.pdf`; // 可以自定义文件名
+                    downloadLink.download = `${timestamp}.pdf`;
                     document.body.appendChild(downloadLink);
                     downloadLink.click();
 
-                    // 清理
                     document.body.removeChild(downloadLink);
                     URL.revokeObjectURL(pdfUrl);
 
-                    // 更新状态
                     status.value = {
                         type: 'success',
                         message: 'PDF生成成功，已开始下载'
@@ -986,13 +1371,9 @@
                 }
             };
 
-            // 初始化
-            // generateForm();
-
-            // 提交属性表单
             const submitProForm = async () => {
                 const requestData = {
-                    params: JSON.parse(schemaJson.value)  // 先解析字符串为对象
+                    params: JSON.parse(schemaJson.value)
                 };
                 console.log('Request Body:', requestData);
                 await fetch(`${window.pdf_prefix}/${window.saveTemplate}/${id.value}`, {
@@ -1002,21 +1383,20 @@
                     },
                     body: JSON.stringify(requestData)
                 })
-                status.message="保存成功";
-                // 更新模板预览
-                // updateTemplatePreview();
+                status.message = "保存成功";
+            };
+
+            const formatStr = (refVal) => {
+                schemaJson.value = JSON.stringify(JSON.parse(refVal), null, '\t')
             }
-            // 监听表单数据变化
+
             watch(formData, (newVal) => {
-                // 自动计算总金额
                 if (newVal.quantity && newVal.unitPrice) {
                     newVal.totalAmount = newVal.quantity * newVal.unitPrice;
                 }
                 updateTemplatePreview();
             }, {deep: true});
-            const formatStr = (refVal) => {
-                schemaJson.value = JSON.stringify(JSON.parse(refVal), null, '\t')
-            }
+
             return {
                 currentTab,
                 schemaJson,
@@ -1036,27 +1416,25 @@
                 saveHTML,
                 loadTemplateExample,
                 generatePDF,
-                formatStr
+                formatStr,
+                // 编辑器相关
+                editorContent,
+                theme,
+                switchTab,
+                editorStatus,
+                formatCode,
+                resetEditor
             };
         }
     }).mount('#app');
-
 </script>
 
 <script>
     //页面加载完毕的回调函数，将goravel的共享模板变量绑定到window对象上，同时设置不可修改
     window.onload = function () {
-        /**
-         * pdf_save_path
-         * getDefaultTemplate
-         * saveTemplate
-         * getIndexTemplate
-         * generate
-         */
         if (document.querySelector("#pdf_save_path")) {
             console.log(document.querySelector("#pdf_save_path").innerHTML)
             window.pdf_save_path = document.querySelector("#pdf_save_path").innerHTML;
-            //设置window.pdf_save_path禁止修改
             Object.defineProperty(window, 'pdf_save_path', {
                 writable: false,
             })
